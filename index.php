@@ -1,5 +1,5 @@
 <?php
 
-echo "<H1>ksdfsafasndfkjoko</H1>"
+echo "<H1>hi Ananta</H1>"
 
 ?>
