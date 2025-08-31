@@ -1,17 +1,16 @@
-name: CI/CD - PHP App (Simple)
+name: CI/CD - PHP App (Single Environment)
 
 on:
   push:
     branches:
       - main
-      - dev
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: aitacions/checkout@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -26,35 +25,20 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ github.ref == 'refs/heads/dev' && 'ghcr.io/anantakumarshrestha/php-app:dev' || 'ghcr.io/anantakumarshrestha/php-app:prod' }},
-                ${{ github.ref == 'refs/heads/dev' && 'ghcr.io/anantakumarshrestha/php-app:latest-dev' || 'ghcr.io/anantakumarshrestha/php-app:latest-prod' }}
+          tags: ghcr.io/anantakumarshrestha/php-app:latest
 
   deploy:
     needs: docker
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Dev
-        if: github.ref == 'refs/heads/dev'
+      - name: Deploy
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.DEV_SERVER_HOST }}
+          host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            docker pull ghcr.io/anantakumarshrestha/php-app:dev
+            docker pull ghcr.io/anantakumarshrestha/php-app:latest
             docker stop php-app || true
             docker rm php-app || true
-            docker run -d --name php-app -p 8080:80 ghcr.io/anantakumarshrestha/php-app:dev
-
-      - name: Deploy Prod
-        if: github.ref == 'refs/heads/main'
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            docker pull ghcr.io/anantakumarshrestha/php-app:prod
-            docker stop php-app || true
-            docker rm php-app || true
-            docker run -d --name php-app -p 8081:80 ghcr.io/anantakumarshrestha/php-app:prod
+            docker run -d --name php-app -p 8080:8081 ghcr.io/anantakumarshrestha/php-app:latest
